@@ -130,7 +130,6 @@ class Interface:
                     "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS or "--output" in self.ARGS else None,
                     "threads": self.ARGS[self.ARGS.index("-t") + 1] if "-t" in self.ARGS or "--thread" in self.ARGS else 1
                 }
-                #print(self.CONFIG)
                 self.checkForErrorIdentifier(self.CONFIG)#
                 self.startOperation()
             def startOperation(self):
@@ -164,7 +163,12 @@ class Interface:
             def launchFile(self, customFileName=None):
                 filename = customFileName if customFileName else self.CONFIG["location"]
                 self.debug(f"{Fore.RED}File: {filename}{Fore.RESET}")
-                details = self.analyseFile(filename)
+                try:
+                    details = self.analyseFile(filename)
+                except:
+                    self.info(f"{Fore.RED}File: {filename}{Fore.RESET}")
+                    self.info(f"{Fore.RED}Error: {sys.exc_info()[0]}{Fore.RESET}")
+                    return
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
