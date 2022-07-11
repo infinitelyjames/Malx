@@ -123,7 +123,7 @@ class Interface:
             def launch(self):
                 self.CONFIG = {
                     "mode": "file" if "-f" in self.ARGS or "--file" in self.ARGS else "directory" if "-d" in self.ARGS or "--directory" in self.ARGS else "recursive" if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
-                    "file": self.ARGS[self.ARGS.index("-f") + 1] if "-f" in self.ARGS or "--file" in self.ARGS else self.ARGS[self.ARGS.index("-d") + 1] if "-d" in self.ARGS or "--directory" in self.ARGS else self.ARGS[self.ARGS.index("-r") + 1] if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
+                    "location": self.ARGS[self.ARGS.index("-f") + 1] if "-f" in self.ARGS or "--file" in self.ARGS else self.ARGS[self.ARGS.index("-d") + 1] if "-d" in self.ARGS or "--directory" in self.ARGS else self.ARGS[self.ARGS.index("-r") + 1] if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
                     "extension": self.ARGS[self.ARGS.index("-e") + 1] if "-e" in self.ARGS or "--extension" in self.ARGS else None,
                     "log": self.ARGS[self.ARGS.index("-l") + 1] if "-l" in self.ARGS or "--log" in self.ARGS else None,
                     "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS or "--output" in self.ARGS else None,
@@ -160,22 +160,23 @@ class Interface:
                 except TimeoutError:
                     pass
                 return details
-            def launchFile(self):
-                details = self.analyseFile(self.CONFIG["file"])
-                self.info(f"""Executing file "{self.CONFIG["file"]}"
+            def launchFile(self, customFileName=None):
+                filename = customFileName if customFileName else self.CONFIG["location"]
+                details = self.analyseFile(filename)
+                self.info(f"""Executing file "{filename}"
                 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
                 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
-            def launchDirectory(self): #NB self.CONFIG["file"] is the directory
+            def launchDirectory(self): #NB self.CONFIG["location"] is the directory
                 print("Indexing directory...")
-                total_files = os.listdir(self.CONFIG["file"])
+                total_files = os.listdir(self.CONFIG["location"])
                 scan_files = []
                 for filename in total_files:
-                    if os.path.isfile(self.CONFIG["file"]+filename):
+                    if os.path.isfile(self.CONFIG["location"]+filename):
                         if self.CONFIG["extension"] is None or self.CONFIG["extension"] in filename:
                             scan_files.append(filename)
                 print(f"{len(scan_files)} file(s) found")
                 for file in scan_files:
-                    self.launchFile(self.CONFIG["file"]+file) # FIX THIS MESS
+                    self.launchFile(self.CONFIG["location"]+file) 
                 
         ArgsParser(ARGS)
 
