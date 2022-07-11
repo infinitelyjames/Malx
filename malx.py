@@ -29,10 +29,6 @@ ie.
     malx.py -d samples/ -e .txt
 """
 
-# Logging mechanisms
-def debug(text) -> None: # debugging info to be sent straight to the log if provided
-    pass 
-
 class Tools:
     def countAllInstances(listSearch, items) -> int:
         count = 0
@@ -89,12 +85,17 @@ class Interface:
                 self.CONFIG = {}
                 self.CHECK_ACTIVE_DELAY = CHECK_ACTIVE_DELAY
                 self.result = ""
+                self.debuglog = ""
                 #print(self.ARGS)
                 self.lowercaseOptions()
                 self.checkNeedsHelp()
                 self.validateArgs()
                 self.checkVersionArg()
                 self.launch()
+            # Logging mechanisms
+            def debug(self, text) -> None: # debugging info to be sent straight to the log if provided
+                print(text)
+                self.debuglog += text + "\n"
             def info(self, text) -> None: # info to be sent to the analysis summary
                 # --WARN-- This is a temporary solution, needs to be thread-safe
                 self.result += text + "\n"
@@ -162,6 +163,7 @@ class Interface:
                 return details
             def launchFile(self, customFileName=None):
                 filename = customFileName if customFileName else self.CONFIG["location"]
+                self.debug(f"{Fore.RED}File: {filename}{Fore.RESET}")
                 details = self.analyseFile(filename)
                 self.info(f"""Executing file "{filename}"
                 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
