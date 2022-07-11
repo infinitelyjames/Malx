@@ -1,7 +1,10 @@
+from colorama import init, Fore, Back, Style
 import sys
 import psutil # pip install -r requirements.txt
 import time
 import subprocess
+
+init() # initialize colorama
 
 VERSION="1.0.1"
 TIME_DELAY = 5 # time delay between spawning in each round of threads /seconds
@@ -28,6 +31,7 @@ def debug(text) -> None: # debugging info to be sent straight to the log if prov
     pass 
 
 def info(text) -> None: # info to be sent to the analysis summary
+    # sum all the text then print at the end?
     print(text)
 
 
@@ -126,9 +130,10 @@ class Interface:
                 self.startOperation()
             def startOperation(self):
                 # output useful info
-                print("Launch settings")
+                print(f"{Back.GREEN}Launch settings{Back.RESET}")
                 for key in self.CONFIG.keys():
-                    print(f"{key.capitalize()}: {self.CONFIG[key]}")
+                    print(f"{Fore.GREEN}{key.capitalize()}: {self.CONFIG[key]}{Fore.RESET}")
+                print(f"{Back.GREEN}Output{Back.RESET}")
                 # start it
                 if self.CONFIG["mode"] == "file":
                     self.launchFile()
@@ -151,6 +156,7 @@ class Interface:
                 return details
             def launchFile(self):
                 details = self.analyseFile(self.CONFIG["file"])
+                print(f"{Back.GREEN}Result{Back.RESET}")
                 info(f"""Executing file "{self.CONFIG["file"]}"
                 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
                 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
