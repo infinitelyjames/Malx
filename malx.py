@@ -1,12 +1,19 @@
-import traceback
+from xdrlib import ConversionError
 from colorama import init, Fore, Back, Style
 import sys
 import psutil # pip install -r requirements.txt
 import time
 import subprocess
 import os
+import traceback
+import threading
 
 init() # initialize colorama
+
+"""
+Issues:
+- stuff needs to be thread-safe
+"""
 
 # CTRL+F "--WARN--" to find stuff that needs fixing
 
@@ -14,7 +21,7 @@ VERSION="1.0.1"
 TIME_DELAY = 5 # time delay between spawning in each round of threads /seconds
 CHECK_ACTIVE_DELAY = 0.5 # time delay between checking if the program is still active /seconds
 CHECK_TIMEOUT = 30 # after this has finished, it is concluded that the malware is still active and not stopped by the antivirus
-HELP_MENU = """
+HELP_MENU = f"""
 Options:
     -h, --help      Show this help menu
     -v, --version   Show version
@@ -22,7 +29,7 @@ Options:
     -d, --directory Directory from which to launch files (only in the first level)
     -r, --recursive Recursively launch files from any depth within a folder
     -e, --extension Extension to filter by (default: all)
-    -t, --thread    Number of threads to use for launching the files (default 1)
+    -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Log file to write to for extra details (default: none)
     -o, --output    Output file to write a condensed summary to (default: none)
 
@@ -83,17 +90,28 @@ class Interface:
                 print(f"Invalid options: The option you provideed is missing a corresponding value")
                 sys.exit(1)
         return wrapper
+    def catchErrors(ErrorIdentifier, msg):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                try:
+                    func(*args, **kwargs)
+                except ErrorIdentifier as e:
+                    print(msg)
+                    sys.exit(1)
+            return wrapper
+        return decorator
     @catchAsserts
     def main(CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY) -> None: 
         ARGS = sys.argv[1:]
         class ArgsParser(object):
-            def __init__(self, ARGS, CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY): 
+            def __init__(self, ARGS, CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY, CHECK_TIMEOUT=CHECK_TIMEOUT, TIME_DELAY=TIME_DELAY): 
                 self.ARGS = ARGS
                 self.CONFIG = {}
                 self.CHECK_ACTIVE_DELAY = CHECK_ACTIVE_DELAY
+                self.CHECK_TIMEOUT = CHECK_TIMEOUT
+                self.THREAD_DELAY = TIME_DELAY
                 self.result = ""
                 self.debuglog = ""
-                #print(self.ARGS)
                 self.lowercaseOptions()
                 self.checkNeedsHelp()
                 self.validateArgs()
@@ -101,6 +119,7 @@ class Interface:
                 self.launch()
             # Logging mechanisms
             def debug(self, text) -> None: # debugging info to be sent straight to the log if provided
+                # --WARN-- This is a temporary solution, needs to be thread-safe
                 print(text)
                 self.debuglog += text + "\n"
             def info(self, text) -> None: # info to be sent to the analysis summary
@@ -128,6 +147,7 @@ class Interface:
                     if isinstance(inputDict[key], ErrorIdentifier):
                         raise AssertionError("Options were not in a supported format, or were not found")
             @Interface.catchIndexErrors
+            @Interface.catchErrors(ValueError, "Invalid options: An option you provided is of the wrong type")
             def launch(self):
                 self.CONFIG = {
                     "mode": "file" if "-f" in self.ARGS or "--file" in self.ARGS else "directory" if "-d" in self.ARGS or "--directory" in self.ARGS else "recursive" if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
@@ -135,7 +155,7 @@ class Interface:
                     "extension": self.ARGS[self.ARGS.index("-e") + 1] if "-e" in self.ARGS or "--extension" in self.ARGS else None,
                     "log": self.ARGS[self.ARGS.index("-l") + 1] if "-l" in self.ARGS or "--log" in self.ARGS else None,
                     "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS or "--output" in self.ARGS else None,
-                    "threads": self.ARGS[self.ARGS.index("-t") + 1] if "-t" in self.ARGS or "--thread" in self.ARGS else 1
+                    "threads": int(self.ARGS[self.ARGS.index("-t") + 1]) if "-t" in self.ARGS or "--thread" in self.ARGS else 1
                 }
                 self.checkForErrorIdentifier(self.CONFIG)#
                 self.startOperation()
@@ -165,7 +185,7 @@ class Interface:
                     details["timeTaken"] = Analysis.waitUntilInactive(process.pid)
                     details["terminated"] = True
                 except TimeoutError:
-                    pass
+                    details["timeTaken"] = self.CHECK_TIMEOUT
                 return details
             def launchFile(self, customFileName=None):
                 filename = customFileName if customFileName else self.CONFIG["location"]
@@ -178,7 +198,7 @@ class Interface:
                     return
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
-Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
+Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
             def launchDirectory(self): #NB self.CONFIG["location"] is the directory
                 print("Indexing directory...")
                 total_files = os.listdir(self.CONFIG["location"])
@@ -188,8 +208,19 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
                         if self.CONFIG["extension"] is None or self.CONFIG["extension"] in filename:
                             scan_files.append(filename)
                 print(f"{len(scan_files)} file(s) found")
+                threads = []
+                THREAD_CONFLICT_DELAY = 0.05 # delay in seconds to prevent threading conflicts, particularly with output logging
+                thread_count = 0
+                print(f"Estimated time: { THREAD_CONFLICT_DELAY*len(scan_files) + int(len(scan_files)/self.CONFIG['threads'])*5 + self.CHECK_TIMEOUT }s")
                 for file in scan_files:
-                    self.launchFile(self.CONFIG["location"]+file) 
+                    threads.append(Threads.newThread(lambda: self.launchFile(self.CONFIG["location"]+file)))
+                    thread_count += 1
+                    time.sleep(self.THREAD_DELAY if thread_count % self.CONFIG["threads"] == 0 else THREAD_CONFLICT_DELAY) # where THREAD_DELAY is the delay between bulk spawning threads
+                # wait for thread completion
+                print("Waiting for results...")
+                for thread in threads:
+                    thread.join()
+                
                 
         ArgsParser(ARGS)
 
