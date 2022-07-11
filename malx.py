@@ -1,10 +1,12 @@
 import sys
 import psutil # pip install -r requirements.txt
 import time
+import subprocess
 
 VERSION="1.0.1"
 TIME_DELAY = 5 # time delay between spawning in each round of threads /seconds
 CHECK_ACTIVE_DELAY = 0.5 # time delay between checking if the program is still active /seconds
+CHECK_TIMEOUT = 30 # after this has finished, it is concluded that the malware is still active and not stopped by the antivirus
 HELP_MENU = """
 Options:
     -h, --help      Show this help menu
@@ -22,11 +24,11 @@ ie.
 """
 
 # Logging mechanisms
-def debug(): # debugging info to be sent straight to the log if provided
+def debug(text) -> None: # debugging info to be sent straight to the log if provided
     pass 
 
-def info(): # info to be sent to the analysis summary
-    pass
+def info(text) -> None: # info to be sent to the analysis summary
+    print(text)
 
 
 class Tools:
@@ -40,6 +42,9 @@ class ErrorIdentifier(object):
     def __init__(self, details = "This is an object assigned to a dict key if the key is invalid"):
         self.details = details
 
+class TimeoutError(Exception):
+    pass
+
 class Analysis:
     def isStillActive(pid) -> bool:
         try:
@@ -47,9 +52,14 @@ class Analysis:
             return True
         except psutil.NoSuchProcess:
             return False
-    def waitUntilInactive(pid):
+    def waitUntilInactive(pid, time_delay = CHECK_ACTIVE_DELAY, timeout = CHECK_TIMEOUT) -> int:
+        iterations = 0
         while Analysis.isStillActive(pid):
-            time.sleep(0.5)
+            time.sleep(time_delay)
+            iterations += 1
+            if iterations * time_delay >= timeout:
+                raise TimeoutError("Timeout reached")
+        return (iterations*time_delay) - (CHECK_ACTIVE_DELAY/2) # time taken to be inactive, average betweeen error intervals
 
 class Interface:
     def catchAsserts(func):
@@ -69,12 +79,13 @@ class Interface:
                 sys.exit(1)
         return wrapper
     @catchAsserts
-    def main() -> None: 
+    def main(CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY) -> None: 
         ARGS = sys.argv[1:]
         class ArgsParser(object):
-            def __init__(self, ARGS): 
+            def __init__(self, ARGS, CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY): 
                 self.ARGS = ARGS
                 self.CONFIG = {}
+                self.CHECK_ACTIVE_DELAY = CHECK_ACTIVE_DELAY
                 #print(self.ARGS)
                 self.lowercaseOptions()
                 self.checkNeedsHelp()
@@ -121,7 +132,23 @@ class Interface:
                 elif self.CONFIG["mode"] == "recursive":
                     self.launchRecursive()
             def analyseFile(self, file):
-                pass
+                details = {
+                    "filename": file,
+                    "timeTaken": 0, # time taken in seconds to be terminated
+                    "terminated": False # was the program terminated by the antivirus 
+                }
+                try:
+                    process = subprocess.Popen(file)
+                    details["timetaken"] = Analysis.waitUntilInactive(process.pid)
+                    details["terminated"] = True
+                except TimeoutError:
+                    pass
+            def launchFile(self):
+                details = self.analyseFile(self.CONFIG["file"])
+                info(f"""Executing file "{self.CONFIG["file"]}"
+                {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
+                Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
+
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
