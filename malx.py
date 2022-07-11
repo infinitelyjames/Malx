@@ -6,6 +6,8 @@ import subprocess
 
 init() # initialize colorama
 
+# CTRL+F "--WARN--" to find stuff that needs fixing
+
 VERSION="1.0.1"
 TIME_DELAY = 5 # time delay between spawning in each round of threads /seconds
 CHECK_ACTIVE_DELAY = 0.5 # time delay between checking if the program is still active /seconds
@@ -29,11 +31,6 @@ ie.
 # Logging mechanisms
 def debug(text) -> None: # debugging info to be sent straight to the log if provided
     pass 
-
-def info(text) -> None: # info to be sent to the analysis summary
-    # sum all the text then print at the end?
-    print(text)
-
 
 class Tools:
     def countAllInstances(listSearch, items) -> int:
@@ -90,12 +87,18 @@ class Interface:
                 self.ARGS = ARGS
                 self.CONFIG = {}
                 self.CHECK_ACTIVE_DELAY = CHECK_ACTIVE_DELAY
+                self.result = ""
                 #print(self.ARGS)
                 self.lowercaseOptions()
                 self.checkNeedsHelp()
                 self.validateArgs()
                 self.checkVersionArg()
                 self.launch()
+            def info(self, text) -> None: # info to be sent to the analysis summary
+                # --WARN-- This is a temporary solution, needs to be thread-safe
+                self.result += text + "\n"
+            def showresult(self):
+                print(self.result)
             def lowercaseOptions(self): 
                 for i in range(len(self.ARGS)):
                     if self.ARGS[i][0] == "-":
@@ -141,6 +144,7 @@ class Interface:
                     self.launchDirectory()
                 elif self.CONFIG["mode"] == "recursive":
                     self.launchRecursive()
+                self.showresult()
             def analyseFile(self, file):
                 details = {
                     "filename": file,
@@ -157,7 +161,7 @@ class Interface:
             def launchFile(self):
                 details = self.analyseFile(self.CONFIG["file"])
                 print(f"{Back.GREEN}Result{Back.RESET}")
-                info(f"""Executing file "{self.CONFIG["file"]}"
+                self.info(f"""Executing file "{self.CONFIG["file"]}"
                 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
                 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
 
