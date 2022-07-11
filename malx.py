@@ -138,7 +138,7 @@ class Interface:
                 print(f"{Back.GREEN}Launch settings{Back.RESET}")
                 for key in self.CONFIG.keys():
                     print(f"{Fore.GREEN}{key.capitalize()}: {self.CONFIG[key]}{Fore.RESET}")
-                print(f"{Back.GREEN}Output{Back.RESET}")
+                print(f"\n{Back.GREEN}Output{Back.RESET}")
                 # start it
                 if self.CONFIG["mode"] == "file":
                     self.launchFile()
@@ -146,7 +146,7 @@ class Interface:
                     self.launchDirectory()
                 elif self.CONFIG["mode"] == "recursive":
                     self.launchRecursive()
-                print(f"{Back.GREEN}Result{Back.RESET}")
+                print(f"\n{Back.GREEN}Result{Back.RESET}")
                 self.showresult()
             def analyseFile(self, file):
                 details = {
@@ -166,8 +166,8 @@ class Interface:
                 self.debug(f"{Fore.RED}File: {filename}{Fore.RESET}")
                 details = self.analyseFile(filename)
                 self.info(f"""Executing file "{filename}"
-                {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
-                Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
+{"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
+Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
             def launchDirectory(self): #NB self.CONFIG["location"] is the directory
                 print("Indexing directory...")
                 total_files = os.listdir(self.CONFIG["location"])
