@@ -3,6 +3,7 @@ import sys
 import psutil # pip install -r requirements.txt
 import time
 import subprocess
+import os
 
 init() # initialize colorama
 
@@ -144,6 +145,7 @@ class Interface:
                     self.launchDirectory()
                 elif self.CONFIG["mode"] == "recursive":
                     self.launchRecursive()
+                print(f"{Back.GREEN}Result{Back.RESET}")
                 self.showresult()
             def analyseFile(self, file):
                 details = {
@@ -160,11 +162,21 @@ class Interface:
                 return details
             def launchFile(self):
                 details = self.analyseFile(self.CONFIG["file"])
-                print(f"{Back.GREEN}Result{Back.RESET}")
                 self.info(f"""Executing file "{self.CONFIG["file"]}"
                 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
                 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds""")
-
+            def launchDirectory(self): #NB self.CONFIG["file"] is the directory
+                print("Indexing directory...")
+                total_files = os.listdir(self.CONFIG["file"])
+                scan_files = []
+                for filename in total_files:
+                    if os.path.isfile(self.CONFIG["file"]+filename):
+                        if self.CONFIG["extension"] is None or self.CONFIG["extension"] in filename:
+                            scan_files.append(filename)
+                print(f"{len(scan_files)} file(s) found")
+                for file in scan_files:
+                    self.launchFile(self.CONFIG["file"]+file) # FIX THIS MESS
+                
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
