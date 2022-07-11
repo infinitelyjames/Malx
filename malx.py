@@ -125,6 +125,11 @@ class Interface:
                 self.checkForErrorIdentifier(self.CONFIG)#
                 self.startOperation()
             def startOperation(self):
+                # output useful info
+                print("Launch settings")
+                for key in self.CONFIG.keys():
+                    print(f"{key.capitalize()}: {self.CONFIG[key]}")
+                # start it
                 if self.CONFIG["mode"] == "file":
                     self.launchFile()
                 elif self.CONFIG["mode"] == "directory":
@@ -143,6 +148,7 @@ class Interface:
                     details["terminated"] = True
                 except TimeoutError:
                     pass
+                return details
             def launchFile(self):
                 details = self.analyseFile(self.CONFIG["file"])
                 info(f"""Executing file "{self.CONFIG["file"]}"
