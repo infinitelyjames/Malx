@@ -1,3 +1,4 @@
+import traceback
 from colorama import init, Fore, Back, Style
 import sys
 import psutil # pip install -r requirements.txt
@@ -28,6 +29,12 @@ Options:
 ie.
     malx.py -d samples/ -e .txt
 """
+
+class Threads:
+	def newThread(function, args=()):
+		new_thread = threading.Thread(target=function, args=args) # error handle threads so they output into log file
+		new_thread.start()
+		return new_thread
 
 class Tools:
     def countAllInstances(listSearch, items) -> int:
@@ -155,7 +162,7 @@ class Interface:
                 }
                 try:
                     process = subprocess.Popen(file)
-                    details["timetaken"] = Analysis.waitUntilInactive(process.pid)
+                    details["timeTaken"] = Analysis.waitUntilInactive(process.pid)
                     details["terminated"] = True
                 except TimeoutError:
                     pass
@@ -167,7 +174,7 @@ class Interface:
                     details = self.analyseFile(filename)
                 except:
                     self.info(f"{Fore.RED}File: {filename}{Fore.RESET}")
-                    self.info(f"{Fore.RED}Error: {sys.exc_info()[0]}{Fore.RESET}")
+                    self.info(f"{Fore.RED}Error: {traceback.format_exc()}{Fore.RESET}")
                     return
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
