@@ -122,6 +122,7 @@ class Interface:
                     func(*args, **kwargs)
                 except ErrorIdentifier as e:
                     print(msg)
+                    print(traceback.format_exc())
                     sys.exit(1)
             return wrapper
         return decorator
@@ -205,6 +206,8 @@ class Interface:
                     self.launchRecursive()
                 print(f"\n{Back.GREEN}Result{Back.RESET}")
                 self.showresult()
+                if self.CONFIG["mode"] == "directory" or self.CONFIG["mode"] == "recursive":
+                    self.writeOutputContents() # only applicable to the modes above
             def analyseFile(self, file):
                 details = {
                     "filename": file,
@@ -254,7 +257,6 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                             scan_files.append(self.CONFIG["location"]+filename)
                 print(f"{len(scan_files)} file(s) found")
                 self.scanFileList(scan_files)
-                self.writeOutputContents()
             def searchDirectory(self, directory):
                 total_files = []
                 for root, dirs, files in os.walk(directory):
@@ -267,22 +269,27 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                 scan_files = self.searchDirectory(self.CONFIG["location"])
                 print("{} file(s) found".format(len(scan_files)))
                 self.scanFileList(scan_files)
-                self.writeOutputContents()
-            def generateGraphXScale(self, step=5):
+            def generateGraphXScale(self, step=1):
                 x_scale = []
                 for i in range(0, self.CHECK_TIMEOUT//step):
                     x_scale.append(i*step)
                 return x_scale
             def generateGraphYScale(self, x_scale):
-                y_scale = 0
+                y_scale = [0]*len(x_scale)
                 for i in x_scale:
+                    y_scale
                     for result in self.resultdata:
                         if result["timeTaken"] >= i:
-                            y_scale += 1
+                            y_scale[i] += 1
                 return y_scale
+            def calculateProactive(self, timeout=5): # returns % of samples blocked within the first x seconds
+                samples_blocked = 0
+                for result in self.resultdata:
+                    if result["timeTaken"] <= timeout:
+                        samples_blocked += 1
+                return samples_blocked/len(self.resultdata)
             def writeOutputContents(self):
                 if self.CONFIG["output"] is not None:
-                    print(f"\n{Fore.GREEN}Writing output details to {self.CONFIG['output']}{Fore.RESET}")
                     if not os.path.exists(self.CONFIG["output"]):
                         os.makedirs(self.CONFIG["output"])
                     # get graph data & generate output graph
@@ -292,8 +299,19 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     plt.ylabel("Samples active")
                     plt.xlabel("Time (s)")
                     plt.savefig(self.CONFIG["output"]+"/graph.png", dpi=100)
+                    # get extra data
+                    proactive = self.calculateProactive() # percentage proactively blocked
                     # generate output html file
-
+                    output_html = self.OUTPUT_HTML_TEMPLATE
+                    output_html = output_html.replace("{PROACTIVE}", str(proactive)
+                    ).replace("{SAMPLES}", str(len(self.resultdata))
+                    ).replace("{TIMEOUT}",str(self.CHECK_TIMEOUT)
+                    ).replace("{ACTIVE}",str(1-proactive)
+                    ).replace("{RESULTS}",self.result
+                    ).replace("{OUTPUT}",self.debuglog.replace(Fore.RED,"").replace(Fore.RESET,""))
+                    with open(self.CONFIG["output"]+"/index.html", "w") as f:
+                        f.write(output_html)
+                    print(f"\n{Fore.GREEN}Written output details to {self.CONFIG['output']}, and a complete document can be found at {self.CONFIG['output']}/index.html {Fore.RESET}")
 
         ArgsParser(ARGS)
 
