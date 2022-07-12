@@ -129,7 +129,7 @@ class Interface:
                 print(self.result)
                 if self.CONFIG["log"]:
                     with open(self.CONFIG["log"], "w") as log:
-                        log.write(self.debuglog)
+                        log.write(f"Warning: Some characters may not load in notepad. Read the contents of this file in terminal.\nExecuted: \n{self.debuglog} \n\nResult:\n{self.result}")
                     print(f"Log file saved to {self.CONFIG['log']}")
             def lowercaseOptions(self): 
                 for i in range(len(self.ARGS)):
