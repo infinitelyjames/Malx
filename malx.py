@@ -31,7 +31,7 @@ Options:
     -e, --extension Extension to filter by (default: all)
     -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Save the output log (default: none)
-    -o, --output    Output folder to write details to, previous details will be overwritten(default: none)
+    -o, --output    Output folder to write details to, previous details will be overwritten, only applicable to directory and recursive modes (default: none)
 
 ie.
     malx.py -d samples/ -e .txt
@@ -213,7 +213,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     thread_count += 1
                     time.sleep(self.THREAD_DELAY if thread_count % self.CONFIG["threads"] == 0 else THREAD_CONFLICT_DELAY) # where THREAD_DELAY is the delay between bulk spawning threads
                 # wait for thread completion
-                print("Waiting for results...")
+                print(f"{Fore.GREEN}Waiting for results...{Fore.RESET}")
                 for thread in threads:
                     thread.join()
             def launchDirectory(self): #NB self.CONFIG["location"] is the directory
@@ -226,6 +226,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                             scan_files.append(self.CONFIG["location"]+filename)
                 print(f"{len(scan_files)} file(s) found")
                 self.scanFileList(scan_files)
+                self.writeOutputContents()
             def searchDirectory(self, directory):
                 total_files = []
                 for root, dirs, files in os.walk(directory):
@@ -238,6 +239,12 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                 scan_files = self.searchDirectory(self.CONFIG["location"])
                 print("{} file(s) found".format(len(scan_files)))
                 self.scanFileList(scan_files)
+                self.writeOutputContents()
+            def writeOutputContents(self):
+                if self.CONFIG["output"] is not None:
+                    print(f"\n{Fore.GREEN}Writing output details to {self.CONFIG['output']}{Fore.RESET}")
+                    if not os.path.exists(self.CONFIG["output"]):
+                        os.makedirs(self.CONFIG["output"])
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
