@@ -32,10 +32,10 @@ Options:
     -e, --extension Extension to filter by (default: all)
     -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Save the output log (default: none)
-    -o, --output    Output folder to write details to, previous details will be overwritten, only applicable to directory and recursive modes (default: none)
+    -o, --output    Output folder to write a html output document to, previous details will be overwritten, only applicable to directory and recursive modes (default: none)
 
 ie.
-    malx.py -d samples/ -e .txt
+    py malx.py -d samples/ -e .txt
 """
 
 OUTPUT_HTML_TEMPLATE = """
@@ -172,7 +172,7 @@ class Interface:
                 assert not(Tools.countAllInstances(self.ARGS, ["-f","--file","-d","--directory","-r","--recursive"]) == 0 and Tools.countAllInstances(self.ARGS,["-v","--version"]) == 0), "No operation specified"
             def checkVersionArg(self):
                 if "-v" in self.ARGS or "--version" in self.ARGS:
-                    print(f"Malx version {VERSION}")
+                    print(f"Malx version {VERSION} by Infinity#1056 (Discord)")
                     sys.exit(0)
             def checkForErrorIdentifier(self, inputDict):
                 for key in inputDict.keys():
@@ -189,6 +189,9 @@ class Interface:
                     "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS or "--output" in self.ARGS else None,
                     "threads": int(self.ARGS[self.ARGS.index("-t") + 1]) if "-t" in self.ARGS or "--thread" in self.ARGS else 1
                 }
+                if self.CONFIG["output"]:
+                    if not (self.CONFIG["output"].endswith("/") or self.CONFIG["output"].endswith("\\")):
+                        self.CONFIG["output"] += "/"
                 self.checkForErrorIdentifier(self.CONFIG)#
                 self.startOperation()
             def startOperation(self):
