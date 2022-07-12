@@ -172,7 +172,7 @@ class Interface:
                 assert not(Tools.countAllInstances(self.ARGS, ["-f","--file","-d","--directory","-r","--recursive"]) == 0 and Tools.countAllInstances(self.ARGS,["-v","--version"]) == 0), "No operation specified"
             def checkVersionArg(self):
                 if "-v" in self.ARGS or "--version" in self.ARGS:
-                    print(f"Malx version {VERSION} by Infinity#1056 (Discord)")
+                    print(f"Malx v{VERSION} by Infinity#1056 (Discord)")
                     sys.exit(0)
             def checkForErrorIdentifier(self, inputDict):
                 for key in inputDict.keys():
@@ -291,13 +291,17 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     if result["timeTaken"] <= timeout:
                         samples_blocked += 1
                 return round((samples_blocked/len(self.resultdata))*100,1)
+            def calculateStillActive(self, y_scale):
+                still_active = y_scale[len(y_scale)-1]
+                return round((still_active/len(self.resultdata))*100,1)
             def writeOutputContents(self):
                 if self.CONFIG["output"] is not None:
                     if not os.path.exists(self.CONFIG["output"]):
                         os.makedirs(self.CONFIG["output"])
                     # get graph data & generate output graph
                     x_scale = self.generateGraphXScale()
-                    plt.plot(x_scale, self.generateGraphYScale(x_scale))
+                    y_scale = self.generateGraphYScale(x_scale)
+                    plt.plot(x_scale, y_scale)
                     plt.title("Malware remaining active")
                     plt.ylabel("Samples active")
                     plt.xlabel("Time (s)")
@@ -309,7 +313,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     output_html = output_html.replace("{PROACTIVE}", str(proactive)
                     ).replace("{SAMPLES}", str(len(self.resultdata))
                     ).replace("{TIMEOUT}",str(self.CHECK_TIMEOUT)
-                    ).replace("{ACTIVE}",str(100-proactive)
+                    ).replace("{ACTIVE}",str(self.calculateStillActive(y_scale))
                     ).replace("{RESULTS}",self.result
                     ).replace("{OUTPUT}",self.debuglog.replace(Fore.RED,"").replace(Fore.RESET,""))
                     with open(self.CONFIG["output"]+"/index.html", "w") as f:
