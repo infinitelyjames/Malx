@@ -30,8 +30,8 @@ Options:
     -r, --recursive Recursively launch files from any depth within a folder
     -e, --extension Extension to filter by (default: all)
     -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
-    -l, --log       Log file to write to for extra details (default: none)
-    -o, --output    Output file to write a condensed summary to (default: none)
+    -l, --log       Save the output log (default: none)
+    -o, --output    Output file to write statistics to (default: none)
 
 ie.
     malx.py -d samples/ -e .txt
@@ -127,6 +127,10 @@ class Interface:
                 self.result += text + "\n"
             def showresult(self):
                 print(self.result)
+                if self.CONFIG["log"]:
+                    with open(self.CONFIG["log"], "w") as log:
+                        log.write(self.debuglog)
+                    print(f"Log file saved to {self.CONFIG['log']}")
             def lowercaseOptions(self): 
                 for i in range(len(self.ARGS)):
                     if self.ARGS[i][0] == "-":
