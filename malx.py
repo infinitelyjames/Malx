@@ -47,7 +47,7 @@ OUTPUT_HTML_TEMPLATE = """
     </head>
     <body>
         <h1>Malx results</h1>
-        <p>The graph below shows the number of malware samples running over time after initial invocation. Any samples still remaining at {TIMEOUT} may have not been terminated, and can continue running after this test concludes.
+        <p>The graph below shows the number of malware samples running over time after initial invocation. Any samples still remaining at {TIMEOUT} seconds may have not been terminated, and can continue running after this test concludes.
         </p>
         <img src="graph.png" alt="graph">
         <p>{PROACTIVE}% of samples had terminated within the first 5 seconds.
