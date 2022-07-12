@@ -52,7 +52,7 @@ OUTPUT_HTML_TEMPLATE = """
         <img src="graph.png" alt="graph">
         <p>{PROACTIVE}% of samples had terminated within the first 5 seconds.
         <br>{ACTIVE}% of samples were still active after {TIMEOUT} seconds.
-        <br>{SAMPLES} were tested, and the test per sample lasted a total of {TIMEOUT} seconds.
+        <br>{SAMPLES} were tested, and the test time per sample lasted a total of {TIMEOUT} seconds.
         </p>
         <h2>Results</h2>
         <pre>{RESULTS}</pre>
@@ -287,7 +287,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                 for result in self.resultdata:
                     if result["timeTaken"] <= timeout:
                         samples_blocked += 1
-                return samples_blocked/len(self.resultdata)
+                return round((samples_blocked/len(self.resultdata))*100,1)
             def writeOutputContents(self):
                 if self.CONFIG["output"] is not None:
                     if not os.path.exists(self.CONFIG["output"]):
@@ -306,7 +306,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     output_html = output_html.replace("{PROACTIVE}", str(proactive)
                     ).replace("{SAMPLES}", str(len(self.resultdata))
                     ).replace("{TIMEOUT}",str(self.CHECK_TIMEOUT)
-                    ).replace("{ACTIVE}",str(1-proactive)
+                    ).replace("{ACTIVE}",str(100-proactive)
                     ).replace("{RESULTS}",self.result
                     ).replace("{OUTPUT}",self.debuglog.replace(Fore.RED,"").replace(Fore.RESET,""))
                     with open(self.CONFIG["output"]+"/index.html", "w") as f:
