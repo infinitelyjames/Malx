@@ -7,6 +7,7 @@ import subprocess
 import os
 import traceback
 import threading
+import matplotlib.pyplot as plt
 
 init() # initialize colorama
 
@@ -35,6 +36,30 @@ Options:
 
 ie.
     malx.py -d samples/ -e .txt
+"""
+
+OUTPUT_HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Malx results</title>
+    </head>
+    <body>
+        <h1>Malx results</h1>
+        <p>The graph below shows the number of malware samples running over time after initial invocation. Any samples still remaining at {TIMEOUT} may have not been terminated, and can continue running after this test concludes.
+        </p>
+        <img src="graph.png" alt="graph">
+        <p>{PROACTIVE}% of samples had terminated within the first 5 seconds.
+        <br>{ACTIVE}% of samples were still active after {TIMEOUT} seconds.
+        <br>{SAMPLES} were tested, and the test per sample lasted a total of {TIMEOUT} seconds.
+        </p>
+        <h2>Results</h2>
+        <pre>{RESULTS}</pre>
+        <h2>Output during execution</h2>
+        <pre>{OUTPUT}</pre>
+    </body>
+</html>
 """
 
 class Threads:
@@ -104,13 +129,15 @@ class Interface:
     def main(CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY) -> None: 
         ARGS = sys.argv[1:]
         class ArgsParser(object):
-            def __init__(self, ARGS, CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY, CHECK_TIMEOUT=CHECK_TIMEOUT, TIME_DELAY=TIME_DELAY): 
+            def __init__(self, ARGS, CHECK_ACTIVE_DELAY=CHECK_ACTIVE_DELAY, CHECK_TIMEOUT=CHECK_TIMEOUT, TIME_DELAY=TIME_DELAY, OUTPUT_HTML_TEMPLATE=OUTPUT_HTML_TEMPLATE): 
                 self.ARGS = ARGS
                 self.CONFIG = {}
                 self.CHECK_ACTIVE_DELAY = CHECK_ACTIVE_DELAY
                 self.CHECK_TIMEOUT = CHECK_TIMEOUT
                 self.THREAD_DELAY = TIME_DELAY
+                self.OUTPUT_HTML_TEMPLATE = OUTPUT_HTML_TEMPLATE
                 self.result = ""
+                self.resultdata = []
                 self.debuglog = ""
                 self.lowercaseOptions()
                 self.checkNeedsHelp()
@@ -200,6 +227,7 @@ class Interface:
                     self.info(f"{Fore.RED}File: {filename}{Fore.RESET}")
                     self.info(f"{Fore.RED}Error: {traceback.format_exc()}{Fore.RESET}")
                     return
+                self.resultdata.append(details)
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
@@ -240,11 +268,33 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                 print("{} file(s) found".format(len(scan_files)))
                 self.scanFileList(scan_files)
                 self.writeOutputContents()
+            def generateGraphXScale(self, step=5):
+                x_scale = []
+                for i in range(0, self.CHECK_TIMEOUT//step):
+                    x_scale.append(i*step)
+                return x_scale
+            def generateGraphYScale(self, x_scale):
+                y_scale = 0
+                for i in x_scale:
+                    for result in self.resultdata:
+                        if result["timeTaken"] >= i:
+                            y_scale += 1
+                return y_scale
             def writeOutputContents(self):
                 if self.CONFIG["output"] is not None:
                     print(f"\n{Fore.GREEN}Writing output details to {self.CONFIG['output']}{Fore.RESET}")
                     if not os.path.exists(self.CONFIG["output"]):
                         os.makedirs(self.CONFIG["output"])
+                    # get graph data & generate output graph
+                    x_scale = self.generateGraphXScale()
+                    plt.plot(x_scale, self.generateGraphYScale(x_scale))
+                    plt.title("Malware remaining active")
+                    plt.ylabel("Samples active")
+                    plt.xlabel("Time (s)")
+                    plt.savefig(self.CONFIG["output"]+"/graph.png", dpi=100)
+                    # generate output html file
+
+
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
