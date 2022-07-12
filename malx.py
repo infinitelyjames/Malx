@@ -199,6 +199,19 @@ class Interface:
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
 Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
+            def scanFileList(self, scan_files):
+                threads = []
+                THREAD_CONFLICT_DELAY = 0.05 # delay in seconds to prevent threading conflicts, particularly with output logging
+                thread_count = 0
+                print(f"Estimated time: { THREAD_CONFLICT_DELAY*len(scan_files) + int(len(scan_files)/self.CONFIG['threads'])*5 + self.CHECK_TIMEOUT }s")
+                for file in scan_files:
+                    threads.append(Threads.newThread(lambda: self.launchFile(file)))
+                    thread_count += 1
+                    time.sleep(self.THREAD_DELAY if thread_count % self.CONFIG["threads"] == 0 else THREAD_CONFLICT_DELAY) # where THREAD_DELAY is the delay between bulk spawning threads
+                # wait for thread completion
+                print("Waiting for results...")
+                for thread in threads:
+                    thread.join()
             def launchDirectory(self): #NB self.CONFIG["location"] is the directory
                 print("Indexing directory...")
                 total_files = os.listdir(self.CONFIG["location"])
@@ -206,22 +219,21 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                 for filename in total_files:
                     if os.path.isfile(self.CONFIG["location"]+filename):
                         if self.CONFIG["extension"] is None or self.CONFIG["extension"] in filename:
-                            scan_files.append(filename)
+                            scan_files.append(self.CONFIG["location"]+filename)
                 print(f"{len(scan_files)} file(s) found")
-                threads = []
-                THREAD_CONFLICT_DELAY = 0.05 # delay in seconds to prevent threading conflicts, particularly with output logging
-                thread_count = 0
-                print(f"Estimated time: { THREAD_CONFLICT_DELAY*len(scan_files) + int(len(scan_files)/self.CONFIG['threads'])*5 + self.CHECK_TIMEOUT }s")
-                for file in scan_files:
-                    threads.append(Threads.newThread(lambda: self.launchFile(self.CONFIG["location"]+file)))
-                    thread_count += 1
-                    time.sleep(self.THREAD_DELAY if thread_count % self.CONFIG["threads"] == 0 else THREAD_CONFLICT_DELAY) # where THREAD_DELAY is the delay between bulk spawning threads
-                # wait for thread completion
-                print("Waiting for results...")
-                for thread in threads:
-                    thread.join()
-                
-                
+                self.scanFileList(scan_files)
+            def searchDirectory(self, directory):
+                total_files = []
+                for root, dirs, files in os.walk(directory):
+                    for file in files:
+                        if self.CONFIG["extension"] is None or self.CONFIG["extension"] in file:
+                            total_files.append(os.path.join(root, file))
+                return total_files
+            def launchRecursive(self):
+                print("Indexing directories...")
+                scan_files = self.searchDirectory(self.CONFIG["location"])
+                print("{} file(s) found".format(len(scan_files)))
+                self.scanFileList(scan_files)
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
