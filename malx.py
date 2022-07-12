@@ -31,7 +31,7 @@ Options:
     -e, --extension Extension to filter by (default: all)
     -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Save the output log (default: none)
-    -o, --output    Output file to write statistics to (default: none)
+    -o, --output    Output folder to write details to, previous details will be overwritten(default: none)
 
 ie.
     malx.py -d samples/ -e .txt
