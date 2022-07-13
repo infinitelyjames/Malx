@@ -1,5 +1,6 @@
 from xdrlib import ConversionError
 from colorama import init, Fore, Back, Style
+from git import Repo
 import sys
 import psutil # pip install -r requirements.txt
 import time
@@ -33,6 +34,7 @@ Options:
     -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Save the output log (default: none)
     -o, --output    Output folder to write a html output document to, previous details will be overwritten, only applicable to directory and recursive modes (default: none)
+    -z, --thezoo    Use this flag to launch malware from the thezoo (ie. `py malx.py --thezoo`)
 
 ie.
     py malx.py -d samples/ -e .txt
@@ -169,7 +171,7 @@ class Interface:
                     sys.exit(0)
             def validateArgs(self): # check for invalid arguments and assert before proceeding
                 assert Tools.countAllInstances(self.ARGS, ["-f","--file","-d","--directory","-r","--recursive"]) <= 1, "Only one file/directory/recursive flag can be used at one time"
-                assert not(Tools.countAllInstances(self.ARGS, ["-f","--file","-d","--directory","-r","--recursive"]) == 0 and Tools.countAllInstances(self.ARGS,["-v","--version"]) == 0), "No operation specified"
+                assert not(Tools.countAllInstances(self.ARGS, ["-f","--file","-d","--directory","-r","--recursive"]) == 0 and Tools.countAllInstances(self.ARGS,["-v","--version","-z","--thezoo"]) == 0), "No operation specified"
             def checkVersionArg(self):
                 if "-v" in self.ARGS or "--version" in self.ARGS:
                     print(f"Malx v{VERSION} by Infinity#1056 (Discord)")
@@ -182,7 +184,7 @@ class Interface:
             @Interface.catchErrors(ValueError, "Invalid options: An option you provided is of the wrong type")
             def launch(self):
                 self.CONFIG = {
-                    "mode": "file" if "-f" in self.ARGS or "--file" in self.ARGS else "directory" if "-d" in self.ARGS or "--directory" in self.ARGS else "recursive" if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
+                    "mode": "file" if "-f" in self.ARGS or "--file" in self.ARGS else "directory" if "-d" in self.ARGS or "--directory" in self.ARGS else "recursive" if "-r" in self.ARGS or "--recursive" in self.ARGS else "thezoo" if "-z" in self.ARGS or "--thezoo" in self.ARGS else ErrorIdentifier(),
                     "location": self.ARGS[self.ARGS.index("-f") + 1] if "-f" in self.ARGS or "--file" in self.ARGS else self.ARGS[self.ARGS.index("-d") + 1] if "-d" in self.ARGS or "--directory" in self.ARGS else self.ARGS[self.ARGS.index("-r") + 1] if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
                     "extension": self.ARGS[self.ARGS.index("-e") + 1] if "-e" in self.ARGS or "--extension" in self.ARGS else None,
                     "log": self.ARGS[self.ARGS.index("-l") + 1] if "-l" in self.ARGS or "--log" in self.ARGS else None,
@@ -192,7 +194,10 @@ class Interface:
                 if self.CONFIG["output"]:
                     if not (self.CONFIG["output"].endswith("/") or self.CONFIG["output"].endswith("\\")):
                         self.CONFIG["output"] += "/"
-                self.checkForErrorIdentifier(self.CONFIG)#
+                if not self.CONFIG["mode"] == "thezoo":
+                    self.checkForErrorIdentifier(self.CONFIG)#
+                else:
+                    self.CONFIG["location"] = "thezoo/" # override folder location to thezoo (unspecified in command line args)
                 self.startOperation()
             def startOperation(self):
                 # output useful info
@@ -207,6 +212,8 @@ class Interface:
                     self.launchDirectory()
                 elif self.CONFIG["mode"] == "recursive":
                     self.launchRecursive()
+                elif self.CONFIG["mode"] == "thezoo":
+                    self.launchTheZoo()
                 print(f"\n{Back.GREEN}Result{Back.RESET}")
                 self.showresult()
                 if self.CONFIG["mode"] == "directory" or self.CONFIG["mode"] == "recursive":
@@ -319,7 +326,23 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     with open(self.CONFIG["output"]+"/index.html", "w") as f:
                         f.write(output_html)
                     print(f"\n{Fore.GREEN}Written output details to {self.CONFIG['output']}, and a complete document can be found at {self.CONFIG['output']}/index.html {Fore.RESET}")
-
+            def extractTheZoo(self, outputFolder="downloads/"): # extract password-protected archives into an output folder
+                if not os.path.exists(outputFolder):
+                    os.makedirs(outputFolder)
+                
+            def launchTheZoo(self) -> None:
+                # download the zoo if not found
+                if os.path.exists("theZoo/"):
+                    self.debug("Found theZoo directory, continuining with analysis (delete theZoo/ folder to re-download)...")
+                else:
+                    self.debug(f"Downloading theZoo... \n{Back.RED}{Fore.WHITE}WARNING: This process may set off the antivirus initially. Turn off the antivirus and hit ENTER{Fore.RESET}{Back.RESET}")
+                    input()
+                    # clone the repository
+                    self.debug("Cloning repository...")
+                    os.makedirs("theZoo/")
+                    Repo.clone_from("https://github.com/safety-jim/test","theZoo/")
+                    # extract all password-protected archives
+                    self.debug("Setup complete, continuing with analysis...")
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
