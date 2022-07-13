@@ -1,5 +1,5 @@
 # Malx - Automatic malware executer
-An automatic mass sample (malware) execution that is based on Malx used by... [PC Security Channel (YouTube)](https://thepcsecuritychannel.com), designed to test an antivirus over a number of samples. This tool has been tested and designed to run on Windows.
+An automatic mass sample (malware) execution that is based on Malx used by [PC Security Channel (YouTube)](https://thepcsecuritychannel.com), designed to test an antivirus over a number of samples. This tool has been tested and designed to run on Windows.
 
 This tool is multi-threaded and allows for the tracking of the execution of large numbers of malware samples.
 ## Setup
