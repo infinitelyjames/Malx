@@ -3,7 +3,7 @@ An automatic mass sample (malware) execution that is based on Malx used by [PC S
 
 This tool is multi-threaded and allows for the tracking of the execution of large numbers of malware samples.
 ## Setup
-Dependencies needing to be installed can be found in `requirements.txt` and installed with `pip install -r requirements.txt`.
+Dependencies needing to be installed can be found in `requirements.txt` and installed with `pip install -r requirements.txt`. Git should also be installed.
 Then, simply run with `python malx.py --help` (or `py malx.py --help`) for the supported commands.
 
 ## Example result

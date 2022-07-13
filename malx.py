@@ -1,7 +1,9 @@
 from xdrlib import ConversionError
 from colorama import init, Fore, Back, Style
 from git import Repo
+from zipfile import ZipFile
 import sys
+import shutil
 import psutil # pip install -r requirements.txt
 import time
 import subprocess
@@ -31,7 +33,7 @@ Options:
     -d, --directory Directory from which to launch files (only in the first level)
     -r, --recursive Recursively launch files from any depth within a folder
     -e, --extension Extension to filter by (default: all)
-    -t, --thread    Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
+    -t, --threads   Number of threads to use for launching the files every {TIME_DELAY} seconds (default 1)
     -l, --log       Save the output log (default: none)
     -o, --output    Output folder to write a html output document to, previous details will be overwritten, only applicable to directory and recursive modes (default: none)
     -z, --thezoo    Use this flag to launch malware from the thezoo (ie. `py malx.py --thezoo`)
@@ -117,7 +119,7 @@ class Interface:
                 print(f"Invalid options: The option you provideed is missing a corresponding value")
                 sys.exit(1)
         return wrapper
-    def catchErrors(ErrorIdentifier, msg):
+    def catchErrors(ErrorIdentifier, msg, auto_exit=True):
         def decorator(func):
             def wrapper(*args, **kwargs):
                 try:
@@ -125,7 +127,8 @@ class Interface:
                 except ErrorIdentifier as e:
                     print(msg)
                     print(traceback.format_exc())
-                    sys.exit(1)
+                    if auto_exit:
+                        sys.exit(1)
             return wrapper
         return decorator
     @catchAsserts
@@ -185,11 +188,11 @@ class Interface:
             def launch(self):
                 self.CONFIG = {
                     "mode": "file" if "-f" in self.ARGS or "--file" in self.ARGS else "directory" if "-d" in self.ARGS or "--directory" in self.ARGS else "recursive" if "-r" in self.ARGS or "--recursive" in self.ARGS else "thezoo" if "-z" in self.ARGS or "--thezoo" in self.ARGS else ErrorIdentifier(),
-                    "location": self.ARGS[self.ARGS.index("-f") + 1] if "-f" in self.ARGS or "--file" in self.ARGS else self.ARGS[self.ARGS.index("-d") + 1] if "-d" in self.ARGS or "--directory" in self.ARGS else self.ARGS[self.ARGS.index("-r") + 1] if "-r" in self.ARGS or "--recursive" in self.ARGS else ErrorIdentifier(),
-                    "extension": self.ARGS[self.ARGS.index("-e") + 1] if "-e" in self.ARGS or "--extension" in self.ARGS else None,
-                    "log": self.ARGS[self.ARGS.index("-l") + 1] if "-l" in self.ARGS or "--log" in self.ARGS else None,
-                    "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS or "--output" in self.ARGS else None,
-                    "threads": int(self.ARGS[self.ARGS.index("-t") + 1]) if "-t" in self.ARGS or "--thread" in self.ARGS else 1
+                    "location": self.ARGS[self.ARGS.index("-f") + 1] if "-f" in self.ARGS else self.ARGS[self.ARGS.index("--file") + 1] if "--file" in self.ARGS else self.ARGS[self.ARGS.index("-d") + 1] if "-d" in self.ARGS else self.ARGS[self.ARGS.index("--directory") + 1] if "--directory" in self.ARGS else self.ARGS[self.ARGS.index("-r") + 1] if "-r" in self.ARGS else self.ARGS[self.ARGS.index("--recursive") + 1] if "--recursive" in self.ARGS else ErrorIdentifier(),
+                    "extension": self.ARGS[self.ARGS.index("-e") + 1] if "-e" in self.ARGS else self.ARGS[self.ARGS.index("--extension") + 1] if "--extension" in self.ARGS else None,
+                    "log": self.ARGS[self.ARGS.index("-l") + 1] if "-l" in self.ARGS else self.ARGS[self.ARGS.index("--log") + 1] if "--log" in self.ARGS else None,
+                    "output": self.ARGS[self.ARGS.index("-o") + 1] if "-o" in self.ARGS else self.ARGS[self.ARGS.index("--output") + 1] if "--output" in self.ARGS else None,
+                    "threads": int(self.ARGS[self.ARGS.index("-t") + 1]) if "-t" in self.ARGS else int(self.ARGS[self.ARGS.index("--threads") + 1]) if "--threads" in self.ARGS else 1
                 }
                 if self.CONFIG["output"]:
                     if not (self.CONFIG["output"].endswith("/") or self.CONFIG["output"].endswith("\\")):
@@ -216,7 +219,7 @@ class Interface:
                     self.launchTheZoo()
                 print(f"\n{Back.GREEN}Result{Back.RESET}")
                 self.showresult()
-                if self.CONFIG["mode"] == "directory" or self.CONFIG["mode"] == "recursive":
+                if self.CONFIG["mode"] == "directory" or self.CONFIG["mode"] == "recursive" or self.CONFIG["mode"] == "thezoo":
                     self.writeOutputContents() # only applicable to the modes above
             def analyseFile(self, file):
                 details = {
@@ -329,20 +332,77 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
             def extractTheZoo(self, outputFolder="downloads/"): # extract password-protected archives into an output folder
                 if not os.path.exists(outputFolder):
                     os.makedirs(outputFolder)
-                
+                for count, malwareFolder in enumerate(os.listdir("theZoo/malware/Binaries")):
+                    if os.path.isdir("theZoo/malware/Binaries/"+malwareFolder):
+                        try:
+                            # get password
+                            for filename in os.listdir("theZoo/malware/Binaries/"+malwareFolder):
+                                if filename.endswith(".pass"):
+                                    password = open("theZoo/malware/Binaries/"+malwareFolder+"/"+filename, "r").read()
+                                    break
+                            # extract zip file with password
+                            for filename in os.listdir("theZoo/malware/Binaries/"+malwareFolder):
+                                if filename.endswith(".zip"):
+                                    with ZipFile("theZoo/malware/Binaries/"+malwareFolder+"/"+filename) as zf:
+                                        zf.extractall(pwd=password.encode(), path=outputFolder)
+                                    self.debug(f"{count+1}/{len(os.listdir('theZoo/malware/Binaries'))}: Extracted {filename}, with password {password}")
+                        except:
+                            print(f"{Fore.RED}Failed to extract {malwareFolder}: \n{traceback.format_exc()} {Fore.RESET}")
+            def formatZooMalware(self, outputFolder="downloads/"): # check for missing extensions
+                for filename in os.listdir(outputFolder):
+                    if not "." in filename and os.path.isfile(outputFolder+filename):
+                        try:
+                            os.rename(outputFolder+filename, outputFolder+filename+".exe")
+                        except:
+                            print(f"{Fore.RED}Failed to rename {filename} to {filename}.exe: \n{traceback.format_exc()}{Fore.RESET}")
+            def cleanUpZoo(self):
+                # remove downloads and zoo directory
+                if os.path.exists("downloads/"):
+                    shutil.rmtree("downloads/")
+                if os.path.exists("theZoo/"):
+                    shutil.rmtree("theZoo/")
             def launchTheZoo(self) -> None:
                 # download the zoo if not found
-                if os.path.exists("theZoo/"):
-                    self.debug("Found theZoo directory, continuining with analysis (delete theZoo/ folder to re-download)...")
+                if os.path.exists("theZoo/") and os.path.exists("downloads/"):
+                    self.debug(f"{Fore.GREEN}Found theZoo directory, continuining with analysis (delete theZoo/ folder to re-download)...{Fore.RESET}")
                 else:
-                    self.debug(f"Downloading theZoo... \n{Back.RED}{Fore.WHITE}WARNING: This process may set off the antivirus initially. Turn off the antivirus and hit ENTER{Fore.RESET}{Back.RESET}")
+                    self.debug(f"{Fore.GREEN}Downloading theZoo... {Fore.RESET}\n{Back.RED}{Fore.WHITE}WARNING: This process may set off the antivirus initially. Turn off the antivirus and hit ENTER{Fore.RESET}{Back.RESET}")
                     input()
+                    # setup for clean installation
+                    self.debug(f"{Fore.GREEN}Cleaning up previous downloads..{Fore.RESET}")
+                    try:
+                        self.cleanUpZoo()
+                    except:
+                        print(f"{Fore.RED}Failed to clean up previous downloads: \n{traceback.format_exc()} \nDelete /theZoo and downloads/ folders, then hit ENTER to continue{Fore.RESET}")
+                        input()
                     # clone the repository
-                    self.debug("Cloning repository...")
+                    self.debug(f"{Fore.GREEN}Cloning repository...{Fore.RESET}")
                     os.makedirs("theZoo/")
-                    Repo.clone_from("https://github.com/safety-jim/test","theZoo/")
+                    Repo.clone_from("https://github.com/safety-jim/test","theZoo/") # test repository: "https://github.com/safety-jim/test"
                     # extract all password-protected archives
-                    self.debug("Setup complete, continuing with analysis...")
+                    self.debug(f"{Fore.GREEN}Extracting malware...{Fore.RESET}")
+                    self.extractTheZoo()
+                    # format
+                    self.debug(f"{Fore.GREEN}Formatting malware...{Fore.RESET}")
+                    self.formatZooMalware()
+                    # conclude
+                    self.debug(f"{Fore.GREEN}Setup complete.{Fore.RESET}")
+                self.debug(f"{Fore.GREEN}Starting analysis...{Fore.RESET}")
+                self.CONFIG["location"] = "downloads/" # location of files changed to downloads now
+                self.debug(f"{Fore.RED}Make sure the antivirus is enabled. \nHit ENTER to continue.{Fore.RESET}")
+                input()
+                self.debug(f"{Back.RED}WARNING: By continuing you ACCEPT that we take no responsibility for the irrepairable damage this may cause to your device. This should not be run on a main computer, instead, a Virtual Machine. If you do not know what you are doing, and how to correctly configure the Virtual Machine, DO NOT PROCEED. {Back.RESET} \n\n{Fore.RED}Type yes to continue {Fore.RESET}")
+                result = input("yes/no: ")
+                if result.lower() == "yes":
+                    result = input("Are you sure? yes/no: ")
+                    if result.lower() == "yes":
+                        self.launchRecursive()
+                    else:
+                        self.debug(f"{Fore.RED}Aborted{Fore.RESET}")
+                        sys.exit(0)
+                else:
+                    self.debug(f"{Fore.RED}Aborted{Fore.RESET}")
+                    sys.exit(0)
         ArgsParser(ARGS)
 
 if __name__ == "__main__":
