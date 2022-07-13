@@ -378,7 +378,7 @@ Time tolerance: ±{self.CHECK_ACTIVE_DELAY/2} seconds\n""")
                     # clone the repository
                     self.debug(f"{Fore.GREEN}Cloning repository...{Fore.RESET}")
                     os.makedirs("theZoo/")
-                    Repo.clone_from("https://github.com/safety-jim/test","theZoo/") # test repository: "https://github.com/safety-jim/test"
+                    Repo.clone_from("https://github.com/ytisf/theZoo","theZoo/") # test repository: "https://github.com/safety-jim/test"
                     # extract all password-protected archives
                     self.debug(f"{Fore.GREEN}Extracting malware...{Fore.RESET}")
                     self.extractTheZoo()
