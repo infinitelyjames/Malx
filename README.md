@@ -40,7 +40,7 @@ ie.
 While most settings can be edited by specifying them when running the command, some less important constants are located in CAPS near the top of the `malx.py` file.
 
 ## Disclaimer
-Do not use this tool to run malware on your main machine. A virtual machine should be used.
+Do not use this tool to run malware on your main machine. A virtual machine should be used, and you should have the knowledge to set it up correctly. If you are unsure of your ability to properly isolate the vm, do not run malware on it.
 Use at your own risk.
 
 Some sources of error may occur if you select too many threads when running the program. If you find the vm constantly on 100% CPU usage, then the number of threads is too high.
