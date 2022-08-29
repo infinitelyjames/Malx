@@ -28,12 +28,31 @@ ie.
     py malx.py -d samples/ -e .txt
 ```
 
-## Recommended usage
+## How to use 
+1) Open your terminal of choice (cmd/ps) and navigate to a place that you wish to clone the repository in
+2) Clone the repository ![Step1](images/step1.png)
+3) Navigate into the directory (you could now run `py malx.py` to see the help message) ![Step2](images/step2.png)
+### Option A - Bulk execute a number of samples
+4. a. Use the `-r` option and point it to the folder containing the samples (as a rule of thumb, use `-r` instead of `-d` as it can be used in more use cases) ![Step 3a](images/step3a.png)
+### Option B - Execute a standalone sample 
+4. b. Use the `-f` option like so: ![Step 3b](images/step3b.png)
+### Option C - Bulk execute files from the theZoo repository (a malware repository)
+4. c. Just simply write it like below, and follow the on-screen prompts (this feature is a work-in-progress) ![Step 3c](images/step3c.png)
 
-1. Create a folder called `samples/`.
-2. Paste all your malicious exes into this folder.
-3. Run `py malx.py -e .exe -d samples/` (Run exe files in the folder called samples). If you're not sure how many threads to specify, keep it as  default (1), and increase if the CPU can be utilised further.
-4. Wait for the results.
+5. By default, you don't actually see that much information without specifying additional arguments, and you can also modify some functionality by using the options below:
+
+`-e, --extension <file extension to filter by>` - Extension to filter by (default: all, applies to -r and -d modes)
+
+`-t, --thread <number of threads>` - Number of files launched every 5 seconds (default 1, applies to -r, -d and -z modes)
+
+`-l, --log <log filename>` - Saves an additional log log (default: none)
+
+`-o, --output <relative folder path>` - Using this generates a folder with an enclosed document detailing how the bulk execution of files progressed, like so: ![Output](images/example_output.png)
+This is one of the most useful flags (applies to -r, -d and -z modes).
+
+A command fully utilising all the options above would look like this: ![Step 6](images/step6.png)
+
+If you have any more questions, contact me on discord (Infinity#1056).
 
 ## Constants
 
