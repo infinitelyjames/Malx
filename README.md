@@ -58,6 +58,12 @@ A command fully utilising all the options above would look like this: ![Step 6](
 
 If you have any more questions, contact me on discord (Infinity#1056).
 
+## Troubleshooting
+
+- `ModuleNotFound` error - hopefully you read the instructions and installed the dependencies from `requirements.txt`. If you have, install the module named as not found via pip (`pip3 install <module_name>` - pip or pip3-for linux), and try again
+
+- `python/py/python3 not found` - make sure python is added to path, and make sure you are using the correct choice from `python/py/python3` as not all keywords work interchangeably in different python versions and Operating Systems. 
+
 ## Constants
 
 While most settings can be edited by specifying them when running the command, some less important constants are located in CAPS near the top of the `malx.py` file.
