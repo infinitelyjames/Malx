@@ -6,6 +6,10 @@ This tool is multi-threaded and allows for the tracking of the execution of larg
 Dependencies needing to be installed can be found in `requirements.txt` and installed with `pip install -r requirements.txt`. Git should also be installed.
 Then, simply run with `python malx.py --help` (or `py malx.py --help`) for the supported commands.
 
+Note: Python3 is required. On linux, `python` may default to Python2. Use `python3 malx.py --help` for more info.
+
+Note: This program does not virtualise the running of samples. Use a virtual machine with the Operating System of choice that the malware you're testing runs on. Testing malware not designed to be run on that particular operating system will render the results invalid.
+
 ## Example result
 ![Output Document](images/example_output.png "Example output")
 Note: To save this file upon completion, specify an output folder (`--output output/`)
