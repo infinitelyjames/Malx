@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from xdrlib import ConversionError
 from colorama import init, Fore, Back, Style
 from git import Repo
