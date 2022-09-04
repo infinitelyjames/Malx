@@ -12,6 +12,8 @@ import subprocess
 import os
 import traceback
 import threading
+import requests
+import googlesearch
 import matplotlib.pyplot as plt
 
 init() # initialize colorama
@@ -19,6 +21,7 @@ init() # initialize colorama
 """
 Issues:
 - stuff needs to be thread-safe
+- add requirements to relevant places
 """
 
 # CTRL+F "--WARN--" to find stuff that needs fixing
@@ -103,6 +106,18 @@ class Analysis:
             if iterations * time_delay >= timeout:
                 raise TimeoutError("Timeout reached")
         return (iterations*time_delay) - (CHECK_ACTIVE_DELAY/2) # time taken to be inactive, average betweeen error intervals
+
+class Trawler(object): 
+    def __init__(self, start_search="free cracked software download", max_depth=5):
+        urls = list(googlesearch.search(start_search)) # max depth is only applicable when following links from here
+        for url in urls:
+            Threads.newThread(lambda: Trawler.followPaths(url))
+    def getLinks(self, text):
+        pass
+    def followPaths(self, URL): # get all links, log exe files
+        response = requests.get(URL)
+        links = self.getLinks(response.text)
+
 
 class Interface:
     def catchAsserts(func):
