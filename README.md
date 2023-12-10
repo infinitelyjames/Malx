@@ -56,7 +56,7 @@ This is one of the most useful flags (applies to -r, -d and -z modes).
 
 A command fully utilising all the options above would look like this: ![Step 6](images/step6.png)
 
-If you have any more questions, contact me on discord (Infinity#1056).
+If you have any more questions, contact me on discord (codebyte).
 
 ## Troubleshooting
 
