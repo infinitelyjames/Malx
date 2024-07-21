@@ -242,9 +242,13 @@ class Interface:
                 try:
                     details = self.analyseFile(filename)
                 except:
-                    self.info(f"{Fore.RED}File: {filename}{Fore.RESET}")
-                    self.info(f"{Fore.RED}Error: {traceback.format_exc()}{Fore.RESET}")
-                    return
+                    self.info(f"{Fore.RED}File: {filename}{Fore.RESET} could not be executed (see significance below error traceback)")
+                    self.info(f"{Fore.RED}Error: {traceback.format_exc()}{Fore.RESET}. \nThis error signifies that this file could not be executed, so was detected by the antivirus before executing, unless an internal error has occurred,")
+                    details = {
+                        "filename": filename,
+                        "timeTaken": 0, # time taken in seconds to be terminated
+                        "terminated": True # was the program terminated by the antivirus 
+                    }
                 self.resultdata.append(details)
                 self.info(f"""Executing file "{filename}"
 {"Time taken: "+str(details["timeTaken"])+" seconds (terminated)" if details["terminated"] else "Timed out: "+str(details["timeTaken"])+" seconds"}
