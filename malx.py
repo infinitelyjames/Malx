@@ -242,6 +242,7 @@ class Interface:
                 try:
                     details = self.analyseFile(filename)
                 except:
+                    # Failed to be executed, likely due to the antivirus preventing this by changing permissions. However, below can accidentally occur due to an internal error, so check traceback.
                     self.info(f"{Fore.RED}File: {filename}{Fore.RESET} could not be executed (see significance below error traceback)")
                     self.info(f"{Fore.RED}Error: {traceback.format_exc()}{Fore.RESET}. \nThis error signifies that this file could not be executed, so was detected by the antivirus before executing, unless an internal error has occurred,")
                     details = {
