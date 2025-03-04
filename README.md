@@ -8,6 +8,8 @@ Then, simply run with `python malx.py --help` (or `py malx.py --help`) for the s
 
 Note: Python3 is required. On linux, `python` may default to Python2. Use `python3 malx.py --help` for more info.
 
+Note: This tool was designed in an earlier version of python3, and has been updated to use Python 3.13 and newer package versions. If you encounter an issue installing or running due to compatibility issues with this upgrade, please create an issue in this repository.
+
 Note: This program does not virtualise the running of samples. Use a virtual machine with the Operating System of choice that the malware you're testing runs on. Testing malware not designed to be run on that particular operating system will render the results invalid.
 
 ## Example result
