@@ -77,4 +77,4 @@ Use at your own risk.
 Some sources of error may occur if you select too many threads when running the program. If you find the vm constantly on 100% CPU usage, then the number of threads is too high.
 
 ## Credits
-Built by [codebyte](https://infinitydev.org.uk) (Discord), inspired by the program used by [The PC Security Channel](https://thepcsecuritychannel.com).
+Built by [nomfinity](https://infinitydev.org.uk) (Discord), inspired by the program used by [The PC Security Channel](https://thepcsecuritychannel.com).
