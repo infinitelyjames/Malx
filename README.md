@@ -10,7 +10,13 @@ Note: Python3 is required. On linux, `python` may default to Python2. Use `pytho
 
 Note: This tool was designed in an earlier version of python3, and has been updated to use Python 3.13 and newer package versions. If you encounter an issue installing or running due to compatibility issues with this upgrade, please create an issue in this repository.
 
-Note: This program does not virtualise the running of samples. Use a virtual machine with the Operating System of choice that the malware you're testing runs on. Testing malware not designed to be run on that particular operating system will render the results invalid.
+## Important Note
+
+This program does not virtualise the running of samples, samples will be run inside the environment this script is run in. 
+Use a suitably-hardened virtual machine with the Operating System of choice that the malware you're testing runs on. 
+Testing malware not designed to be run on that particular operating system will render the results invalid.
+This software has the ability to download and run malware, so **do not use on an important device**. 
+Users of this software do so at their own risk.
 
 ## Example result
 ![Output Document](images/example_output.png "Example output")
@@ -78,7 +84,3 @@ Some sources of error may occur if you select too many threads when running the 
 
 ## Credits
 Built by [nomfinity](https://infinitydev.org.uk) (Discord), inspired by the program used by [The PC Security Channel](https://thepcsecuritychannel.com).
-
-<div style="padding: 10px; border: 1px solid red; background-color: #ffe6e6;">
-<strong>Testing</strong> This is a tetst.
-</div>
